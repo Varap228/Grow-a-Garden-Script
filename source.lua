@@ -1,4 +1,29 @@
-local Mercury = loadstring(game:HttpGet("https://raw.githubusercontent.com/deeeity/mercury-lib/master/src.lua"))()
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+WindUI:SetNotificationLower(true)
+local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/Jxereas/UI-Libraries/main/notification_gui_library.lua", true))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Grow-a-Garden script",
+    Icon = "banana",
+    Author = "Discord: varap228",
+    Folder = "Aboba_goida228",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    -- Background = "",
+    User = {
+        Enabled = true,
+        Anonymous = false,
+        Callback = function()
+            themes = {'Rose', 'Indigo', 'Plant', 'Red', 'Light', 'Dark'}
+            local count, curTheme = nil, WindUI:GetCurrentTheme()
+            if table.find(themes, curTheme) == #themes then count = -5 else count = 1 end
+            WindUI:SetTheme(themes[table.find(themes, curTheme)+count])
+        end,
+    }
+})
+-- Window:SetBackgroundImage("rbxassetid://id-here")
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,13 +32,6 @@ local RunService = game:GetService("RunService")
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer.PlayerGui
-
-local GUI = Mercury:Create{
-    Name = "Grow-a-Garden script",
-    Size = UDim2.fromOffset(600, 400),
-    Theme = Mercury.Themes.Dark,
-    Link = "Discord: varap228 /",
-}
 
 local GameEvents = ReplicatedStorage:WaitForChild("GameEvents")
 local buySeedEvent = GameEvents:WaitForChild("BuySeedStock")
@@ -225,119 +243,126 @@ else
     warn("Player farm or plant locations not found on script start.")
 end
 
-local TabMain = GUI:Tab{
-    Name = "Main",
-    Icon = "rbxassetid://124620632231839" 
-}
+local TabMain = Window:Tab({
+    Title = "Main",
+    Icon = "rbxassetid://124620632231839",
+    Locked = false,
+})
 
-local TabSettings = GUI:Tab{
-    Name = "Settings",
-    Icon = "rbxassetid://96957318452720"
-}
+local TabSettings = Window:Tab({
+    Title = "Settings",
+    Icon = "rbxassetid://96957318452720",
+    Locked = false,
+})
 
-TabMain:Button{
-    Name = "Set Plant Position",
-    Description = "Set the position to plant seeds (defaults to center of your farm)",
+Window:SelectTab(1)
+
+local Button_set_pos_plant = TabMain:Button({
+    Title = "Set Plant Position",
+    Desc = "Set the position to plant seeds (defaults to center of your farm)",
+    Locked = false,
     Callback = function()
         local character = localPlayer.Character
         local root_part = character and character:FindFirstChild("HumanoidRootPart")
         if root_part then
             plant_position = root_part.Position
-            GUI:Notification{
-                Title = "Position Set",
-                Text = "Planting position set to: " .. tostring(plant_position),
-                Duration = 2
-            }
+            Notification.new("info", "Position Set", "Planting position set to: " .. tostring(math.round(plant_position.X) ..', ' .. math.round(plant_position.Y) ..', ' .. math.round(plant_position.Z))):deleteTimeout(1)
         else
-            GUI:Notification{ Title = "Error", Text = "Player character not found.", Duration = 2 }
+            Notification.new("error", "Error", "Player character not found."):deleteTimeout(1) 
         end
     end
-}
-
-TabMain:Dropdown{
-    Name = "Seed Selection",
-    StartingText = selected_seed,
-    Description = "Select a seed to plant",
-    Items = {'Carrot', 'Strawberry', "Blueberry", 'Orange Tulip', 'Tomato', 'Corn', 'Watermelon', 'Daffodil', "Pumpkin", 'Apple', 'Bamboo', 'Coconut', 'Cactus', 'Dragon Fruit', 'Mango', 'Grape', 'Mushroom', 'Pepper', 'Cacao', 'Beanstalk'},
-    Callback = function(item)
-        selected_seed = item
+})  
+local Dropdown_seed_select = TabMain:Dropdown({
+    Title = "Seed Selection",
+    Values = {'Carrot', 'Strawberry', "Blueberry", 'Orange Tulip', 'Tomato', 'Corn', 'Watermelon', 'Daffodil', "Pumpkin", 'Apple', 'Bamboo', 'Coconut', 'Cactus', 'Dragon Fruit', 'Mango', 'Grape', 'Mushroom', 'Pepper', 'Cacao', 'Beanstalk'},
+    Value = "Carrot",
+    Multi = false,
+    AllowNone = true,
+    Callback = function(option) 
+        -- selected_seed = game:GetService("HttpService"):JSONEncode(option))
+        selected_seed = option
     end
-}
-
-TabMain:Toggle{
-    Name = "Auto Plant",
-    StartingState = is_auto_planting,
-    Description = "Automatically plants selected seeds at the set position",
-    Callback = function(state)
+})
+local Toggle_auto_plant = TabMain:Toggle({
+    Title = "Auto Plant",
+    Desc = "Automatically plants selected seeds at the set position",
+    -- Icon = "",
+    Default = is_auto_planting,
+    Callback = function(state) 
         is_auto_planting = state
         if state then
             task.spawn(auto_plant_seeds, selected_seed)
         end
     end
-}
+})
 
-TabMain:Toggle{
-    Name = "Auto Collect",
-    StartingState = is_auto_collecting,
-    Description = "Automatically collects fruits from plants",
-    Callback = function(state)
+local Toggle_auto_collect = TabMain:Toggle({
+    Title = "Auto Collect",
+    Desc = "Automatically collects fruits from plants",
+    -- Icon = "",
+    Default = is_auto_collecting,
+    Callback = function(state) 
         is_auto_collecting = state
         if state then
             task.spawn(auto_collect_fruits)
         end
     end
-}
+})
 
-TabSettings:Toggle{
-    Name = "Auto Buy Seeds",
-    StartingState = settings.auto_buy_seeds,
-    Description = "Automatically buy seeds when they run out",
-    Callback = function(state)
+local Toggle_auto_boy_seeds = TabSettings:Toggle({
+    Title = "Auto Buy Seeds",
+    Desc = "Automatically buy seeds when they run out",
+    -- Icon = "bird",
+    Default = settings.auto_buy_seeds,
+    Callback = function(state) 
         settings.auto_buy_seeds = state
     end
-}
+})
+Toggle_auto_boy_seeds:Set(true) -- Default in toggle not working gayy
 
-TabSettings:Toggle{
-    Name = "Use Distance Check",
-    StartingState = settings.use_distance_check,
-    Description = "Enable to only collect fruits within a certain distance",
-    Callback = function(state)
+local Toggle_dist_check = TabSettings:Toggle({
+    Title = "Use Distance Check",
+    Desc = "Enable to only collect fruits within a certain distance (-fps)",
+    -- Icon = "bird",
+    Default = settings.use_distance_check,
+    Callback = function(state) 
         settings.use_distance_check = state
     end
-}
+})
 
-TabSettings:Toggle{
-    Name = "Collect Nearest Fruit",
-    StartingState = settings.collect_nearest_fruit,
-    Description = "Collect only the nearest fruit if distance check is enabled",
-    Callback = function(state)
+local Toggle_collect_neear_f = TabSettings:Toggle({
+    Title = "Collect Nearest Fruit",
+    Desc = "Collect only the nearest fruit if distance check is enabled",
+    -- Icon = "bird",
+    Default = settings.use_distance_check,
+    Callback = function(state) 
         settings.collect_nearest_fruit = state
     end
-}
+})
+Toggle_collect_neear_f:Set(true) -- Default in toggle not working gayy
 
-TabSettings:Slider{
-    Name = "Collection Distance",
-    Description = "Distance to collect fruits (if distance check is enabled)",
-    Default = settings.collection_distance,
-    Min = 1,
-    Max = 30,
-    Rounding = 0.5,
+local Slider_collect_dist = TabSettings:Slider({
+    Title = "Collection Distance",
+    Desc = "Distance to collect fruits (if distance check is enabled)",
+    Step = 0.5,
+    Value = {
+        Min = 1,
+        Max = 30,
+        Default = settings.collection_distance,
+    },
     Callback = function(value)
         settings.collection_distance = value
     end
-}
+})
 
-TabSettings:Toggle{
-    Name = "Debug Mode",
-    StartingState = settings.debug_mode,
-    Description = "Enable debug mode for console logs",
-    Callback = function(state)
+local Toggle_debug_mode = TabSettings:Toggle({
+    Title = "Debug Mode",
+    Desc = "Enable debug mode for console logs (console output)",
+    Icon = "bug",
+    Default = settings.debug_mode,
+    Callback = function(state) 
         settings.debug_mode = state
     end
-}
+})
 
-GUI:Notification{
-    Title = "Grow-a-Garden script loaded!",
-    Text = "Version 1.1",
-    Duration = 5
-}
+Notification.new("success", "Grow-a-Garden script loaded successfully!", "Version 1.1 | Enjoy gardening!"):deleteTimeout(5) 
